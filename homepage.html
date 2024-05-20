@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grocery Dash - Home</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+            background: linear-gradient(45deg, #ff9a9e, #fad0c4, #fad0c4, #ff9a9e, #fbc2eb, #a18cd1, #fbc2eb, #fcb69f, #ff9a9e, #fad0c4);
+            background-size: 200% 200%;
+            animation: gradientAnimation 30s ease infinite;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            text-align: center;
+        }
+
+        @keyframes gradientAnimation {
+            0% {
+                background-position: 0% 50%;
+            }
+            50% {
+                background-position: 100% 50%;
+            }
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.8);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+            width: 80%;
+            max-width: 600px;
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+            position: relative;
+        }
+
+        .container h1 {
+            font-size: 3em;
+            color: #ff6347;
+        }
+
+        .container p {
+            font-size: 1.2em;
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .buttons a {
+            display: block;
+            padding: 15px;
+            font-size: 1.2em;
+            color: white;
+            background: #ff6347;
+            border-radius: 10px;
+            text-decoration: none;
+            transition: background 0.3s;
+        }
+
+        .buttons a:hover {
+            background: #e5533d;
+        }
+
+        .emoji-decoration {
+            position: absolute;
+            font-size: 2em;
+            pointer-events: none;
+        }
+
+        .character-image {
+            width: 150px; /* Adjust the width as needed */
+            height: auto;
+            margin: 0 auto 20px;
+            display: block;
+        }
+
+        .popup {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 255, 255, 0.9);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+            width: 80%;
+            max-width: 500px;
+            z-index: 1000;
+            display: none;
+            text-align: left;
+        }
+
+        .popup h2 {
+            font-size: 2em;
+            color: #ff6347;
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        .popup ol {
+            padding-left: 20px;
+        }
+
+        .popup ol li {
+            font-size: 1.2em;
+            margin-bottom: 10px;
+        }
+
+        .popup button {
+            display: block;
+            padding: 10px 20px;
+            font-size: 1em;
+            color: white;
+            background: #ff6347;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            margin: 20px auto 0;
+            transition: background 0.3s;
+        }
+
+        .popup button:hover {
+            background: #e5533d;
+        }
+
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+            display: none;
+        }
+        #gameStorePopup ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        #gameStorePopup ul li {
+            font-size: 1.2em;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .buyButton {
+            padding: 5px 10px;
+            font-size: 1em;
+            color: white;
+            background: #ff6347;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .buyButton:hover {
+            background: #e5533d;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <img src="assets/wifejak.png" alt="Wifejak" class="character-image">
+        <h1>Grocery Dash</h1>
+        <p>Welcome to Wifejak's Grocery Dash! Select an option to get started:</p>
+        <div class="buttons">
+            <a href="index.html">Play Game 🕹️</a>
+            <a href="#" id="howToPlayButton">How to Play 📖</a>
+            <a href="#gameStore">Game Store 🛒</a>
+            <a href="#" id="aboutWife">About $wife</a>
+        </div>
+    </div>
+
+    <div class="emoji-decoration" id="emoji1">🛒</div>
+    <div class="emoji-decoration" id="emoji2">🍎</div>
+    <div class="emoji-decoration" id="emoji3">🍞</div>
+    <div class="emoji-decoration" id="emoji4">🥦</div>
+
+    <div class="popup" id="howToPlayPopup">
+        <h2>How to Play</h2>
+        <ol>
+            <li>Use the arrow keys to move your character around the grocery store.</li>
+            <li>Collect all the items scattered throughout the store.</li>
+            <li>Avoid obstacles and moving hazards to stay in the game.</li>
+            <li>Once you have collected all items, head to the checkout to advance to the next level.</li>
+            <li>Each level gets progressively harder with more obstacles and items to collect.</li>
+            <li>Try to achieve the highest score possible!</li>
+        </ol>
+        <p>(Hint: Save up wifejak coins to buy secret images from the shop!)</p>
+        <button id="closePopupButton">Close</button>
+    </div>
+    <div class="overlay" id="overlay"></div>
+
+    <div class="popup" id="gameStorePopup">
+        <h2>Game Store</h2>
+        <div id="coinCount"></div>
+        <ul>
+            <li>
+                Item 1 - 35 Coins 
+                <button class="buyButton" data-price="35" data-image="assets/shop1.png">Buy</button>
+            </li>
+            <li>
+                Item 2 - 60 Coins 
+                <button class="buyButton" data-price="60" data-image="assets/shop2.png">Buy</button>
+            </li>
+            <li>
+                Item 3 - 120 Coins 
+                <button class="buyButton" data-price="120" data-image="assets/shop3.png">Buy</button>
+            </li>
+        </ul>
+        <button id="closeStorePopupButton">Close</button>
+    </div>
+    <div class="overlay" id="storeOverlay"></div>
+       
+    <div class="popup" id="aboutWifePopup">
+        <h2>About $wife on Solana</h2>
+        <p>
+            Wifejak is a cherished meme and $wife is a meme coin on the Solana blockchain. Enthusiasts of Wifejak spread her joy through memes and community spirit. Join us in celebrating and holding $wife tokens to be part of our growing community.
+        </p>
+        <p>
+            <a href="https://dex.example.com" target="_blank" style="color: #ff6347; text-decoration: underline;">Dex</a>
+            <br>
+            <a href="https://officialwebsite.example.com" target="_blank" style="color: #ff6347; text-decoration: underline;">Official Website</a>
+        </p>
+        <style>#dexscreener-embed{position:relative;width:100%;padding-bottom:125%;}@media(min-width:1400px){#dexscreener-embed{padding-bottom:65%;}}#dexscreener-embed iframe{position:absolute;width:100%;height:100%;top:0;left:0;border:0;}</style><div id="dexscreener-embed"><iframe src="https://dexscreener.com/solana/6B7HaigdotRyb3h5YQ487zfnTueEmUhXLLPccaaNq1ei?embed=1&theme=dark"></iframe></div>
+        <button id="closeAboutWifePopupButton">Close</button>
+    </div>
+    <div class="overlay" id="aboutWifeOverlay"></div>
+    
+    
+
+    <script>
+        const gameStoreButton = document.querySelector('.buttons a[href="#gameStore"]');
+        const gameStorePopup = document.getElementById('gameStorePopup');
+        const closeStorePopupButton = document.getElementById('closeStorePopupButton');
+        const storeOverlay = document.getElementById('storeOverlay');
+        const coinCountElement = document.getElementById('coinCount');
+        const buyButtons = document.querySelectorAll('.buyButton');
+        // About $wife button functionality
+        const aboutWifeButton = document.getElementById('aboutWife');
+        const aboutWifePopup = document.getElementById('aboutWifePopup');
+        const closeAboutWifePopupButton = document.getElementById('closeAboutWifePopupButton');
+        const aboutWifeOverlay = document.getElementById('aboutWifeOverlay');
+
+        aboutWifeButton.addEventListener('click', function() {
+            aboutWifePopup.style.display = 'block';
+            aboutWifeOverlay.style.display = 'block';
+        });
+
+        closeAboutWifePopupButton.addEventListener('click', function() {
+            aboutWifePopup.style.display = 'none';
+            aboutWifeOverlay.style.display = 'none';
+        });
+
+        aboutWifeOverlay.addEventListener('click', function() {
+            aboutWifePopup.style.display = 'none';
+            aboutWifeOverlay.style.display = 'none';
+        });
+
+
+
+        // Function to update the coin count in the store popup
+        function updateCoinCount() {
+            const coins = localStorage.getItem('currency') || 0;
+            coinCountElement.textContent = `Coins: ${coins}`;
+        }
+
+        // Show the game store popup
+        gameStoreButton.addEventListener('click', function() {
+            updateCoinCount();
+            gameStorePopup.style.display = 'block';
+            storeOverlay.style.display = 'block';
+        });
+
+        // Close the game store popup
+        closeStorePopupButton.addEventListener('click', function() {
+            gameStorePopup.style.display = 'none';
+            storeOverlay.style.display = 'none';
+        });
+
+        storeOverlay.addEventListener('click', function() {
+            gameStorePopup.style.display = 'none';
+            storeOverlay.style.display = 'none';
+        });
+
+        // Function to trigger a download in a new tab
+        function triggerDownload(imageUrl) {
+            window.open(imageUrl, '_blank');
+        }
+
+        // Handle buying items
+        buyButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const price = parseInt(this.getAttribute('data-price'), 10);
+                let coins = parseInt(localStorage.getItem('currency') || 0, 10);
+
+                if (coins >= price) {
+                    coins -= price;
+                    localStorage.setItem('currency', coins);
+                    updateCoinCount();
+                    alert('Purchase successful!');
+                    const imageUrl = this.getAttribute('data-image');
+                    triggerDownload(imageUrl);
+                } else {
+                    alert('Not enough coins!');
+                }
+            });
+        });
+
+
+
+
+        document.querySelectorAll('.buttons a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                document.querySelector(this.getAttribute('href')).scrollIntoView({
+                    behavior: 'smooth'
+                });
+            });
+        });
+
+        // Function to make emojis bounce around the screen
+        function makeEmojiBounce(emoji) {
+            let x = Math.random() * (window.innerWidth - 50);
+            let y = Math.random() * (window.innerHeight - 50);
+            let dx = (Math.random() - 0.5) * 4;
+            let dy = (Math.random() - 0.5) * 4;
+
+            function moveEmoji() {
+                x += dx;
+                y += dy;
+
+                if (x + 50 > window.innerWidth || x < 0) {
+                    dx *= -1;
+                }
+
+                if (y + 50 > window.innerHeight || y < 0) {
+                    dy *= -1;
+                }
+
+                emoji.style.left = x + 'px';
+                emoji.style.top = y + 'px';
+
+                requestAnimationFrame(moveEmoji);
+            }
+
+            moveEmoji();
+        }
+
+        const emojis = document.querySelectorAll('.emoji-decoration');
+        emojis.forEach(makeEmojiBounce);
+
+        // How to Play Popup functionality
+        const howToPlayButton = document.getElementById('howToPlayButton');
+        const howToPlayPopup = document.getElementById('howToPlayPopup');
+        const closePopupButton = document.getElementById('closePopupButton');
+        const overlay = document.getElementById('overlay');
+
+        howToPlayButton.addEventListener('click', function() {
+            howToPlayPopup.style.display = 'block';
+            overlay.style.display = 'block';
+        });
+
+        closePopupButton.addEventListener('click', function() {
+            howToPlayPopup.style.display = 'none';
+            overlay.style.display = 'none';
+        });
+
+        overlay.addEventListener('click', function() {
+            howToPlayPopup.style.display = 'none';
+            overlay.style.display = 'none';
+        });
+    </script>
+</body>
+</html>

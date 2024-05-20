@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grocery Dash</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+            background: linear-gradient(45deg, #ff9a9e, #fad0c4, #fad0c4, #ff9a9e, #fbc2eb, #a18cd1, #fbc2eb, #fcb69f, #ff9a9e, #fad0c4);
+            background-size: 200% 200%;
+            animation: gradientAnimation 30s ease infinite;
+        }
+
+        @keyframes gradientAnimation {
+            0% {
+                background-position: 0% 50%;
+            }
+            50% {
+                background-position: 100% 50%;
+            }
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        #homeButton {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            padding: 10px 15px;
+            font-size: 16px;
+            background-color: #ff6347;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            transition: background 0.3s;
+        }
+
+        #homeButton:hover {
+            background-color: #e5533d;
+        }
+
+        #gameCanvas {
+            background-image: url('assets/background.png'); /* Path to the generated tile texture */
+            background-size: 128px 128px;
+            background-repeat: repeat;
+            display: block;
+            margin: 50px auto;
+            position: relative;
+            z-index: 1;
+            margin-top: 100px;
+        }
+        #hud {
+            position: absolute;
+            top: 20px; /* Add space from the top */
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            justify-content: space-around; /* Space the items evenly */
+            padding: 10px 20px; /* Adjust padding for a more compact look */
+            background-color: rgba(255, 255, 255, 0.8); /* Slightly more transparent background */
+            border-radius: 15px; /* Rounder corners */
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.2); /* Softer shadow */
+            z-index: 10;
+            width: 50%; /* Narrower width */
+            font-family: 'Comic Sans MS', cursive, sans-serif; /* Thematic font */
+        }
+
+        #hud div {
+            font-size: 20px; /* Adjust font size */
+            font-weight: bold;
+            color: #333; /* Darker text color for better contrast */
+        }
+
+        #hud div span {
+            color: #ff6347; /* Tomato color for dynamic values */
+        }
+
+        #startScreen {
+            display: block;
+        }
+
+        .popup {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 20px;
+            background-color: white;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            text-align: center;
+            display: none;
+            z-index: 100;
+        }
+        .popup button {
+            padding: 10px 20px;
+            margin-top: 20px;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <a href="homepage.html" id="homeButton">🏠 Home</a>
+    <audio id="backgroundMusic" src="assets/club_penguin.mp3" loop></audio>
+    <audio id="speedBoost" src="assets/speed_up.mp3"></audio>
+    <audio id="coinSound" src="assets/get_coins.mp3"></audio>
+    <div id="hud">
+        <div>Score: <span id="score">0</span></div>
+        <div>Store Coins: <span id="currency">0</span></div>
+        <div>Level: <span id="level">1</span></div>
+    </div>
+    <div id="popup" class="popup">
+        <div id="finalScore"></div>
+        <button onclick="startGame(); document.getElementById('backgroundMusic').play();">Play Again</button>
+    </div>
+
+    <div id="startScreen" class="popup">
+        <img src="assets/excited.png" alt="Wifejak" style="width: 100px; margin-bottom: 0px;">
+        <br>
+        <button id="startButton">Start Game</button>
+    </div>
+
+    <canvas id="gameCanvas" width="1200" height="800"></canvas>
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        const hud = {
+            scoreElement: document.getElementById('score'),
+            score: 0,
+            levelElement: document.getElementById('level')
+        };
+
+        // Currency loading and updating code
+        const currencyElement = document.getElementById('currency');
+        let currency = 0;
+
+        function updateCurrency(amount) {
+            currency += amount;
+            currencyElement.textContent = currency;
+            localStorage.setItem('currency', currency);
+        }
+
+        function loadCurrency() {
+            const savedCurrency = localStorage.getItem('currency');
+            if (savedCurrency) {
+                currency = parseInt(savedCurrency, 10);
+                currencyElement.textContent = currency;
+            }
+        }
+
+        loadCurrency();
+
+        let gameRunning = false;
+
+        const startButton = document.getElementById('startButton');
+        startButton.addEventListener('click', function() {
+            const startScreen = document.getElementById('startScreen');
+            startScreen.style.display = 'none';
+            gameRunning = true;
+            startGame();
+        });
+
+        const popup = document.getElementById('popup');
+        const finalScoreElement = document.getElementById('finalScore');
+
+        const player = {
+            x: 100,
+            y: 100,
+            width: 90,
+            height: 120,
+            speed: 5,
+            dx: 0,
+            dy: 0,
+            isImmune: false,
+            facingRight: true,
+            collisionMask: {
+                xOffset: 15, // Offset from player's x-coordinate
+                yOffset: 20, // Offset from player's y-coordinate
+                width: 60,  // Width of the collision mask
+                height: 80  // Height of the collision mask
+            }
+        };
+
+        const playerImage = new Image();
+        playerImage.src = 'assets/wifejak_cart.png';
+
+        const items = [];
+        const shelves = [];
+        const obstacles = [];
+        const checkout = { x: canvas.width - 100, y: canvas.height - 100, width: 100, height: 100 };
+        let collectedAllItems = false;
+        let level = 1;
+        let gameInterval;
+        let immunityTimer;
+
+        let initialShelves = 3
+        let initialItems = 5
+        let initialObstacles = 2
+
+        let showLevelMessage = false;
+        let levelMessage = '';
+        let levelMessageAlpha = 1;
+        let levelMessageTimer;
+
+        function startGame() {
+            const backgroundMusic = document.getElementById('backgroundMusic');
+            backgroundMusic.currentTime = 0;
+            backgroundMusic.volume = 0.55;
+            backgroundMusic.play();
+
+            hud.score = 0;
+            hud.scoreElement.textContent = hud.score;
+            level = 1;
+            hud.levelElement.textContent = level;
+            player.x = 100;
+            player.y = 100;
+            items.length = 0;
+            shelves.length = 0;
+            obstacles.length = 0;
+            collectedAllItems = false;
+            loadCurrency(); // Load currency from cookies
+            generateShelves(initialShelves);
+            generateItems(initialItems);
+            generateObstacles(initialObstacles);
+
+            while (isCollidingWithAny(player)) {
+                player.x = Math.random() * (canvas.width - player.width);
+                player.y = Math.random() * (canvas.height - player.height);
+            }
+
+            clearInterval(gameInterval);
+
+            gameInterval = setInterval(updateGame, 1000 / 60);
+
+            popup.style.display = 'none';
+
+            startImmunity(3000);
+        }
+
+        window.addEventListener('beforeunload', () => {
+            localStorage.setItem('currency', currency);
+        });
+
+        window.onload = function() {
+            loadCurrency();
+        };
+
+        function updateGame() {
+            if (!gameRunning) return; // If game is not running, skip the update
+
+            clearCanvas();
+            movePlayer();
+            moveObstacles();
+            drawShelves();
+            drawCheckout();
+            drawPlayer();
+            drawItems();
+            drawObstacles();
+            checkCollisions();
+            updateHud();
+            if (showLevelMessage) {
+                drawLevelMessage();
+            }
+        }
+
+        function endGame() {
+            clearInterval(gameInterval);
+            const backgroundMusic = document.getElementById('backgroundMusic');
+            backgroundMusic.currentTime = 0;
+            backgroundMusic.pause();
+            finalScoreElement.textContent = `Game Over! Your final score: ${hud.score}`;
+            popup.style.display = 'block';
+        }
+
+        function clearCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+
+        function movePlayer() {
+            let nextX = player.x + player.dx;
+            let nextY = player.y + player.dy;
+
+            const mask = {
+                x: nextX + player.collisionMask.xOffset,
+                y: nextY + player.collisionMask.yOffset,
+                width: player.collisionMask.width,
+                height: player.collisionMask.height
+            };
+
+            if (nextX < 0) nextX = 0;
+            if (nextX + player.width > canvas.width) nextX = canvas.width - player.width;
+            if (nextY < 0) nextY = 0;
+            if (nextY + player.height > canvas.height) nextY = canvas.height - player.height;
+
+            let collisionDetected = false;
+            shelves.forEach(shelf => {
+                if (isCollidingWithMask(mask, shelf)) {
+                    collisionDetected = true;
+                }
+            });
+
+            if (!collisionDetected) {
+                player.x = nextX;
+                player.y = nextY;
+            }
+        }
+
+
+        function drawPlayer() {
+            ctx.save();
+            if (player.isImmune) {
+                ctx.globalAlpha = Date.now() % 500 < 250 ? 0.3 : 1;
+            } else {
+                ctx.globalAlpha = 1;
+            }
+            
+            if (player.facingRight) {
+                ctx.drawImage(playerImage, player.x, player.y, player.width, player.height);
+            } else {
+                ctx.translate(player.x + player.width, player.y);
+                ctx.scale(-1, 1);
+                ctx.drawImage(playerImage, 0, 0, player.width, player.height);
+            }
+
+            ctx.restore();
+            ctx.globalAlpha = 1;
+        }
+
+        const itemImages = [];
+        for (let i = 1; i <= 5; i++) { // Assuming you have 3 item images
+            const img = new Image();
+            img.src = `assets/item${i}.png`;
+            itemImages.push(img);
+        }
+
+
+        function generateItems(count) {
+            const maxAttempts = 100; // Maximum number of attempts to place an item
+            const minX = 50; // Minimum x-coordinate for item placement
+            const minY = 50; // Minimum y-coordinate for item placement
+            const maxX = canvas.width - 50; // Maximum x-coordinate for item placement
+            const maxY = canvas.height - 50; // Maximum y-coordinate for item placement
+            for (let i = 0; i < count; i++) {
+                let item;
+                let attempts = 0;
+                do {
+                    item = {
+                        x: Math.random() * (maxX - minX) + minX,
+                        y: Math.random() * (maxY - minY) + minY,
+                        width: 40,
+                        height: 40,
+                        collected: false,
+                        image: itemImages[Math.floor(Math.random() * itemImages.length)]
+                    };
+                    attempts++;
+                } while ((isCollidingWithShelves(item) || isCollidingWithAny(item, true)) && attempts < maxAttempts);
+                if (attempts < maxAttempts) {
+                    items.push(item);
+                }
+            }
+        }
+
+        function isCollidingWithShelves(rect) {
+            for (let shelf of shelves) {
+                if (isColliding(rect, shelf)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        function drawItems() {
+            items.forEach(item => {
+                if (!item.collected) {
+                    ctx.drawImage(item.image, item.x, item.y, item.width, item.height);
+                }
+            });
+        }
+
+        function generateShelves(count) {
+            const maxAttempts = 100; // Maximum number of attempts to place a shelf
+            const minY = 100; // Minimum y-coordinate for shelf placement
+            const maxY = canvas.height - 200; // Maximum y-coordinate for shelf placement
+            for (let i = 0; i < count; i++) {
+                let shelf;
+                let attempts = 0;
+                do {
+                    shelf = {
+                        x: Math.random() * (canvas.width - 400) + 100,
+                        y: Math.random() * (maxY - minY) + minY,
+                        width: 200,
+                        height: 100,
+                        image: shelfImages[Math.floor(Math.random() * shelfImages.length)] // Randomly assign an image
+                    };
+                    attempts++;
+                } while (isCollidingWithAny(shelf) || !hasEnoughSpace(shelf) && attempts < maxAttempts);
+                if (attempts < maxAttempts) {
+                    shelves.push(shelf);
+                }
+            }
+        }
+
+        function drawShelves() {
+            shelves.forEach(shelf => {
+                ctx.drawImage(shelf.image, shelf.x, shelf.y, shelf.width, shelf.height);
+            });
+        }
+
+
+        function hasEnoughSpace(newShelf) {
+            const padding = Math.max(player.width, player.height);
+            for (let shelf of shelves) {
+                if (Math.abs(newShelf.x - shelf.x) < shelf.width + padding &&
+                    Math.abs(newShelf.y - shelf.y) < shelf.height + padding) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        // Load shelf images
+        const shelfImages = [];
+        const shelfImageSources = ['assets/shelf.png', 'assets/freezer.png'];
+
+        shelfImageSources.forEach(src => {
+            const img = new Image();
+            img.src = src;
+            shelfImages.push(img);
+        });
+
+        function generateObstacles(count) {
+            const maxAttempts = 100; // Maximum number of attempts to place an obstacle
+            for (let i = 0; i < count; i++) {
+                let obstacle;
+                let attempts = 0;
+                do {
+                    obstacle = {
+                        x: Math.random() * (canvas.width - 44),
+                        y: Math.random() * (canvas.height - 66),
+                        width: 44,
+                        height: 66,
+                        dx: (Math.random() < 0.5 ? 1 : -1) * (Math.random() * 2 + 1),
+                        dy: (Math.random() < 0.5 ? 1 : -1) * (Math.random() * 2 + 1)
+                    };
+                    attempts++;
+                } while (isCollidingWithAny(obstacle) && attempts < maxAttempts);
+                if (attempts < maxAttempts) {
+                    obstacles.push(obstacle);
+                }
+            }
+        }
+
+        // Add this line near the player image declaration
+        const obstacleImage = new Image();
+        obstacleImage.src = 'assets/bear2.png';
+
+        // Update the drawObstacles function to draw the image facing the correct direction
+        function drawObstacles() {
+            obstacles.forEach(obstacle => {
+                ctx.save();
+                if (obstacle.dx < 0) {
+                    // If moving left, flip the image horizontally
+                    ctx.translate(obstacle.x + obstacle.width, obstacle.y);
+                    ctx.scale(-1, 1);
+                    ctx.drawImage(obstacleImage, 0, 0, obstacle.width, obstacle.height);
+                } else {
+                    // If moving right, draw the image normally
+                    ctx.drawImage(obstacleImage, obstacle.x, obstacle.y, obstacle.width, obstacle.height);
+                }
+                ctx.restore();
+            });
+        }
+
+
+        function moveObstacles() {
+            obstacles.forEach(obstacle => {
+                let nextX = obstacle.x + obstacle.dx;
+                let nextY = obstacle.y + obstacle.dy;
+
+                if (nextX < 0 || nextX + obstacle.width > canvas.width) {
+                    obstacle.dx *= -1;
+                    nextX = obstacle.x + obstacle.dx;
+                }
+                if (nextY < 0 || nextY + obstacle.height > canvas.height) {
+                    obstacle.dy *= -1;
+                    nextY = obstacle.y + obstacle.dy;
+                }
+
+                let collisionDetected = false;
+                shelves.forEach(shelf => {
+                    if (isColliding({ x: nextX, y: nextY, width: obstacle.width, height: obstacle.height }, shelf)) {
+                        collisionDetected = true;
+                    }
+                });
+
+                if (!collisionDetected) {
+                    obstacle.x = nextX;
+                    obstacle.y = nextY;
+                } else {
+                    obstacle.dx *= -1;
+                    obstacle.dy *= -1;
+                }
+            });
+        }
+
+        function checkCollisions() {
+            const mask = {
+                x: player.x + player.collisionMask.xOffset,
+                y: player.y + player.collisionMask.yOffset,
+                width: player.collisionMask.width,
+                height: player.collisionMask.height
+            };
+
+            items.forEach(item => {
+                if (!item.collected && isCollidingWithMask(mask, item)) {
+                    item.collected = true;
+                    hud.score += 10;
+                    showScoreIncrease(player.x + player.width / 3, player.y, 10);
+
+                    if (item.image.src.includes('item3.png')) {
+                        updateCurrency(1);
+                        coinSound.currentTime = 0;
+                        coinSound.play();
+                    }
+
+                    if (item.image.src.includes('item5.png')) {
+                        speedBoost.currentTime = 0;
+                        speedBoost.play();
+                        player.speed = 7; // Increase player's speed
+                        startImmunity(3000); // Start immunity for 3 seconds
+
+                        // Update player's current motion immediately
+                        if (player.dx !== 0) {
+                            player.dx = player.dx > 0 ? player.speed : -player.speed;
+                        }
+                        if (player.dy !== 0) {
+                            player.dy = player.dy > 0 ? player.speed : -player.speed;
+                        }
+
+                        setTimeout(() => {
+                            player.speed = 5; // Reset player's speed after 3 seconds
+                            // Update player's current motion immediately
+                            if (player.dx !== 0) {
+                                player.dx = player.dx > 0 ? player.speed : -player.speed;
+                            }
+                            if (player.dy !== 0) {
+                                player.dy = player.dy > 0 ? player.speed : -player.speed;
+                            }
+                        }, 3000);
+                    }
+                }
+            });
+
+            if (!player.isImmune) {
+                obstacles.forEach(obstacle => {
+                    if (isCollidingWithMask(mask, obstacle)) {
+                        endGame();
+                    }
+                });
+            }
+
+            if (items.every(item => item.collected)) {
+                collectedAllItems = true;
+            }
+
+            if (collectedAllItems && isCollidingWithMask(mask, checkout)) {
+                advanceToNextLevel();
+            }
+        }
+
+        function isColliding(rect1, rect2) {
+            return rect1.x < rect2.x + rect2.width &&
+                rect1.x + rect1.width > rect2.x &&
+                rect1.y < rect2.y + rect2.height &&
+                rect1.y + rect1.height > rect2.y;
+        }
+
+        function isCollidingWithMask(mask, rect) {
+            return mask.x < rect.x + rect.width &&
+                mask.x + mask.width > rect.x &&
+                mask.y < rect.y + rect.height &&
+                mask.y + mask.height > rect.y;
+        }
+
+
+        function isCollidingWithAny(rect, ignoreShelves = false) {
+            if (isColliding(rect, checkout)) return true;
+
+            if (!ignoreShelves) {
+                for (let shelf of shelves) {
+                    if (isColliding(rect, shelf)) return true;
+                }
+            }
+
+            for (let item of items) {
+                if (isColliding(rect, item)) return true;
+            }
+
+            for (let obstacle of obstacles) {
+                if (isColliding(rect, obstacle)) return true;
+            }
+
+            return false;
+        }
+
+
+
+        function showScoreIncrease(x, y, score) {
+            const scoreIncrease = document.createElement('div');
+            scoreIncrease.textContent = `+${score}`;
+            scoreIncrease.style.position = 'absolute';
+            scoreIncrease.style.left = `${canvas.offsetLeft + x}px`;
+            scoreIncrease.style.top = `${canvas.offsetTop + y}px`;
+            scoreIncrease.style.color = 'green';
+            scoreIncrease.style.fontSize = '24px';
+            scoreIncrease.style.fontWeight = 'bold';
+            scoreIncrease.style.transition = 'top 1s ease-out, opacity 1s ease-out';
+            scoreIncrease.style.zIndex = 2;
+            document.body.appendChild(scoreIncrease);
+
+            setTimeout(() => {
+                scoreIncrease.style.top = `${canvas.offsetTop + y - 50}px`;
+                scoreIncrease.style.opacity = '0';
+            }, 0);
+
+            setTimeout(() => {
+                document.body.removeChild(scoreIncrease);
+            }, 1000);
+        }
+
+        function updateHud() {
+            hud.scoreElement.innerHTML = `🛒 <span>${hud.score}</span>`; // Adding cart icon
+            hud.levelElement.innerHTML = `🏁 <span>${level}</span>`; // Adding flag icon
+        }
+
+
+        function handleKeyDown(event) {
+            switch (event.key) {
+                case 'ArrowLeft':
+                    player.dx = -player.speed;
+                    player.facingRight = false;
+                    break;
+                case 'ArrowRight':
+                    player.dx = player.speed;
+                    player.facingRight = true;
+                    break;
+                case 'ArrowUp':
+                    player.dy = -player.speed;
+                    break;
+                case 'ArrowDown':
+                    player.dy = player.speed;
+                    break;
+            }
+        }
+
+        function handleKeyUp(event) {
+            switch (event.key) {
+                case 'ArrowLeft':
+                case 'ArrowRight':
+                    player.dx = 0;
+                    break;
+                case 'ArrowUp':
+                case 'ArrowDown':
+                    player.dy = 0;
+                    break;
+            }
+        }
+
+        const checkoutImage = new Image();
+        checkoutImage.src = 'assets/register.png'; // Path to the checkout image
+
+        function drawCheckout() {
+            ctx.drawImage(checkoutImage, checkout.x, checkout.y, checkout.width, checkout.height);
+        }
+
+        function advanceToNextLevel() {
+            level++;
+            hud.score += 20 + level * 10;
+            collectedAllItems = false;
+            items.length = 0;
+            shelves.length = 0;
+            obstacles.length = 0;
+            
+            generateShelves(Math.min(initialShelves + Math.floor(level / 2), 10));
+            generateItems(Math.min(initialItems + level, 15));
+            generateObstacles(Math.min(initialObstacles + Math.floor(level / 2), 10));
+
+            player.x = 100; 
+            player.y = 100;
+
+            while (isCollidingWithAny(player)) {
+                player.x = Math.random() * (canvas.width - player.width);
+                player.y = Math.random() * (canvas.height - player.height);
+            }
+
+            showLevelMessage = true;
+            levelMessage = `Level ${level} - Score: ${hud.score}`;
+            levelMessageAlpha = 1;
+            clearTimeout(levelMessageTimer);
+            levelMessageTimer = setTimeout(() => {
+                showLevelMessage = false;
+            }, 3000);
+
+            startImmunity(3500);
+        }
+
+        function startImmunity(duration) {
+            player.isImmune = true;
+            clearTimeout(immunityTimer);
+            immunityTimer = setTimeout(() => {
+                player.isImmune = false;
+            }, duration);
+        }
+
+        function drawLevelMessage() {
+            ctx.save();
+            ctx.globalAlpha = levelMessageAlpha;
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = 'white';
+            ctx.font = '48px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(levelMessage, canvas.width / 2, canvas.height / 2);
+            ctx.restore();
+
+            levelMessageAlpha -= 0.01;
+            if (levelMessageAlpha < 0) {
+                showLevelMessage = false;
+            }
+        }
+
+        document.addEventListener('keydown', handleKeyDown);
+        document.addEventListener('keyup', handleKeyUp);
+
+        startGame();
+    </script>
+</body>
+</html>
