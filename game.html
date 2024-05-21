@@ -651,6 +651,7 @@
 
 
 
+        // Update showScoreIncrease function
         function showScoreIncrease(x, y, score) {
             const scoreIncrease = document.createElement('div');
             scoreIncrease.textContent = `+${score}`;
@@ -791,7 +792,9 @@
             isTouching: false
         };
 
+        // Updated touch event listeners to prevent scrolling
         function handleTouchStart(event) {
+            event.preventDefault(); // Prevent default scrolling behavior
             const touch = event.touches[0];
             const rect = canvas.getBoundingClientRect();
             touchControls.startX = touch.clientX - rect.left;
@@ -800,6 +803,7 @@
         }
 
         function handleTouchMove(event) {
+            event.preventDefault(); // Prevent default scrolling behavior
             if (!touchControls.isTouching) return;
 
             const touch = event.touches[0];
@@ -821,27 +825,16 @@
         }
 
         function handleTouchEnd(event) {
+            event.preventDefault(); // Prevent default scrolling behavior
             touchControls.isTouching = false;
             player.dx = 0;
             player.dy = 0;
         }
 
         // Attach touch event listeners
-        document.addEventListener('touchmove', function(event) {
-            event.preventDefault();
-        }, { passive: false });
-
-        document.addEventListener('touchstart', function(event) {
-            if (event.target === canvas) {
-                event.preventDefault();
-            }
-        }, { passive: false });
-
-        document.addEventListener('touchend', function(event) {
-            if (event.target === canvas) {
-                event.preventDefault();
-            }
-        }, { passive: false });
+        canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
+        canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
+        canvas.addEventListener('touchend', handleTouchEnd, { passive: false });
 
 
         startGame();
