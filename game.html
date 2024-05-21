@@ -792,9 +792,8 @@
             isTouching: false
         };
 
-        // Updated touch event listeners to prevent scrolling
         function handleTouchStart(event) {
-            event.preventDefault(); // Prevent default scrolling behavior
+            event.preventDefault();
             const touch = event.touches[0];
             const rect = canvas.getBoundingClientRect();
             touchControls.startX = touch.clientX - rect.left;
@@ -803,7 +802,7 @@
         }
 
         function handleTouchMove(event) {
-            event.preventDefault(); // Prevent default scrolling behavior
+            event.preventDefault();
             if (!touchControls.isTouching) return;
 
             const touch = event.touches[0];
@@ -819,23 +818,19 @@
                 // Vertical movement
                 player.dy = deltaY > 0 ? player.speed : -player.speed;
             }
-
-            touchControls.startX = touch.clientX - rect.left;
-            touchControls.startY = touch.clientY - rect.top;
         }
 
         function handleTouchEnd(event) {
-            event.preventDefault(); // Prevent default scrolling behavior
+            event.preventDefault();
             touchControls.isTouching = false;
             player.dx = 0;
             player.dy = 0;
         }
 
-        // Attach touch event listeners
+        // Attach touch event listeners to the canvas specifically
         canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
         canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
         canvas.addEventListener('touchend', handleTouchEnd, { passive: false });
-
 
         startGame();
     </script>
