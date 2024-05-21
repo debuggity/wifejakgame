@@ -827,9 +827,22 @@
         }
 
         // Attach touch event listeners
-        canvas.addEventListener('touchstart', handleTouchStart);
-        canvas.addEventListener('touchmove', handleTouchMove);
-        canvas.addEventListener('touchend', handleTouchEnd);
+        document.addEventListener('touchmove', function(event) {
+            event.preventDefault();
+        }, { passive: false });
+
+        document.addEventListener('touchstart', function(event) {
+            if (event.target === canvas) {
+                event.preventDefault();
+            }
+        }, { passive: false });
+
+        document.addEventListener('touchend', function(event) {
+            if (event.target === canvas) {
+                event.preventDefault();
+            }
+        }, { passive: false });
+
 
         startGame();
     </script>
