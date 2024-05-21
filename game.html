@@ -186,10 +186,10 @@
             isImmune: false,
             facingRight: true,
             collisionMask: {
-                xOffset: 15, // Offset from player's x-coordinate
-                yOffset: 20, // Offset from player's y-coordinate
-                width: 60,  // Width of the collision mask
-                height: 80  // Height of the collision mask
+                xOffset: 5, // Offset from player's x-coordinate
+                yOffset: 55, // Offset from player's y-coordinate
+                width: 80,  // Width of the collision mask
+                height: 55  // Height of the collision mask
             }
         };
 
@@ -265,9 +265,9 @@
             moveObstacles();
             drawShelves();
             drawCheckout();
+            drawObstacles();
             drawPlayer();
             drawItems();
-            drawObstacles();
             checkCollisions();
             updateHud();
             if (showLevelMessage) {
@@ -292,8 +292,15 @@
             let nextX = player.x + player.dx;
             let nextY = player.y + player.dy;
 
-            const mask = {
+            const maskX = {
                 x: nextX + player.collisionMask.xOffset,
+                y: player.y + player.collisionMask.yOffset,
+                width: player.collisionMask.width,
+                height: player.collisionMask.height
+            };
+
+            const maskY = {
+                x: player.x + player.collisionMask.xOffset,
                 y: nextY + player.collisionMask.yOffset,
                 width: player.collisionMask.width,
                 height: player.collisionMask.height
@@ -304,19 +311,26 @@
             if (nextY < 0) nextY = 0;
             if (nextY + player.height > canvas.height) nextY = canvas.height - player.height;
 
-            let collisionDetected = false;
+            let horizontalCollision = false;
+            let verticalCollision = false;
+
             shelves.forEach(shelf => {
-                if (isCollidingWithMask(mask, shelf)) {
-                    collisionDetected = true;
+                if (isCollidingWithMask(maskX, shelf)) {
+                    horizontalCollision = true;
+                }
+                if (isCollidingWithMask(maskY, shelf)) {
+                    verticalCollision = true;
                 }
             });
 
-            if (!collisionDetected) {
+            if (!horizontalCollision) {
                 player.x = nextX;
+            }
+
+            if (!verticalCollision) {
                 player.y = nextY;
             }
         }
-
 
         function drawPlayer() {
             ctx.save();
@@ -365,7 +379,7 @@
                         image: itemImages[Math.floor(Math.random() * itemImages.length)]
                     };
                     attempts++;
-                } while ((isCollidingWithShelves(item) || isCollidingWithAny(item, true)) && attempts < maxAttempts);
+                } while ((isCollidingWithShelves(item)) && attempts < maxAttempts);
                 if (attempts < maxAttempts) {
                     items.push(item);
                 }
@@ -441,7 +455,7 @@
         });
 
         function generateObstacles(count) {
-            const maxAttempts = 100; // Maximum number of attempts to place an obstacle
+            const maxAttempts = 500; // Maximum number of attempts to place an obstacle
             for (let i = 0; i < count; i++) {
                 let obstacle;
                 let attempts = 0;
@@ -455,12 +469,13 @@
                         dy: (Math.random() < 0.5 ? 1 : -1) * (Math.random() * 2 + 1)
                     };
                     attempts++;
-                } while (isCollidingWithAny(obstacle) && attempts < maxAttempts);
-                if (attempts < maxAttempts) {
-                    obstacles.push(obstacle);
-                }
+                } while (isCollidingWithShelves(obstacle) && attempts < maxAttempts);
+                    if (attempts < maxAttempts) {
+                        obstacles.push(obstacle);
+                    }
             }
         }
+
 
         // Add this line near the player image declaration
         const obstacleImage = new Image();
@@ -524,7 +539,8 @@
             };
 
             items.forEach(item => {
-                if (!item.collected && isCollidingWithMask(mask, item)) {
+                // Use full player dimensions for item collisions
+                if (!item.collected && isColliding(player, item)) {
                     item.collected = true;
                     hud.score += 10;
                     showScoreIncrease(player.x + player.width / 3, player.y, 10);
@@ -605,11 +621,12 @@
             }
 
             for (let item of items) {
-                if (isColliding(rect, item)) return true;
+                // Use full player dimensions for item collisions
+                if (isColliding(player, item)) return true;
             }
 
             for (let obstacle of obstacles) {
-                if (isColliding(rect, obstacle)) return true;
+                if (isCollidingWithMask({ x: rect.x + player.collisionMask.xOffset, y: rect.y + player.collisionMask.yOffset, width: player.collisionMask.width, height: player.collisionMask.height }, obstacle)) return true;
             }
 
             return false;
