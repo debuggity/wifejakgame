@@ -13,6 +13,8 @@
             background: linear-gradient(45deg, #ff9a9e, #fad0c4, #fad0c4, #ff9a9e, #fbc2eb, #a18cd1, #fbc2eb, #fcb69f, #ff9a9e, #fad0c4);
             background-size: 200% 200%;
             animation: gradientAnimation 30s ease infinite;
+            width: 100%;
+            height: 100%;
         }
 
         @keyframes gradientAnimation {
@@ -50,15 +52,28 @@
             background-color: #e5533d;
         }
 
+        #canvasContainer {
+            position: relative;
+            width: 100%;
+            max-width: 1200px;
+            max-height: 800px;
+            padding-top: 66.67%; /* Aspect ratio (800 / 1200) */
+            margin: 50px auto;
+        }
+
         #gameCanvas {
+            position: absolute;
+            transform: translateY(10%);
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            max-height: 800px;
             background-image: url('assets/background.png'); /* Path to the generated tile texture */
             background-size: 128px 128px;
             background-repeat: repeat;
             display: block;
-            margin: 50px auto;
-            position: relative;
             z-index: 1;
-            margin-top: 100px;
         }
         #hud {
             position: absolute;
@@ -130,8 +145,10 @@
         <br>
         <button id="startButton">Start Game</button>
     </div>
+    <div id="canvasContainer">
+        <canvas id="gameCanvas" width="1200" height="800"></canvas>
+    </div>
 
-    <canvas id="gameCanvas" width="1200" height="800"></canvas>
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
@@ -638,8 +655,12 @@
             const scoreIncrease = document.createElement('div');
             scoreIncrease.textContent = `+${score}`;
             scoreIncrease.style.position = 'absolute';
-            scoreIncrease.style.left = `${canvas.offsetLeft + x}px`;
-            scoreIncrease.style.top = `${canvas.offsetTop + y}px`;
+
+            const rect = canvas.getBoundingClientRect(); // Get the canvas position and dimensions
+
+            scoreIncrease.style.left = `${x + rect.left}px`;
+            scoreIncrease.style.top = `${y + rect.top}px`;
+
             scoreIncrease.style.color = 'green';
             scoreIncrease.style.fontSize = '24px';
             scoreIncrease.style.fontWeight = 'bold';
@@ -648,7 +669,7 @@
             document.body.appendChild(scoreIncrease);
 
             setTimeout(() => {
-                scoreIncrease.style.top = `${canvas.offsetTop + y - 50}px`;
+                scoreIncrease.style.top = `${y + rect.top - 50}px`; // Adjust the final position based on the canvas position
                 scoreIncrease.style.opacity = '0';
             }, 0);
 
@@ -656,6 +677,8 @@
                 document.body.removeChild(scoreIncrease);
             }, 1000);
         }
+
+
 
         function updateHud() {
             hud.scoreElement.innerHTML = `🛒 <span>${hud.score}</span>`; // Adding cart icon
@@ -761,6 +784,52 @@
 
         document.addEventListener('keydown', handleKeyDown);
         document.addEventListener('keyup', handleKeyUp);
+
+        const touchControls = {
+            startX: 0,
+            startY: 0,
+            isTouching: false
+        };
+
+        function handleTouchStart(event) {
+            const touch = event.touches[0];
+            const rect = canvas.getBoundingClientRect();
+            touchControls.startX = touch.clientX - rect.left;
+            touchControls.startY = touch.clientY - rect.top;
+            touchControls.isTouching = true;
+        }
+
+        function handleTouchMove(event) {
+            if (!touchControls.isTouching) return;
+
+            const touch = event.touches[0];
+            const rect = canvas.getBoundingClientRect();
+            const deltaX = (touch.clientX - rect.left) - touchControls.startX;
+            const deltaY = (touch.clientY - rect.top) - touchControls.startY;
+
+            if (Math.abs(deltaX) > Math.abs(deltaY)) {
+                // Horizontal movement
+                player.dx = deltaX > 0 ? player.speed : -player.speed;
+                player.facingRight = deltaX > 0;
+            } else {
+                // Vertical movement
+                player.dy = deltaY > 0 ? player.speed : -player.speed;
+            }
+
+            touchControls.startX = touch.clientX - rect.left;
+            touchControls.startY = touch.clientY - rect.top;
+        }
+
+        function handleTouchEnd(event) {
+            touchControls.isTouching = false;
+            player.dx = 0;
+            player.dy = 0;
+        }
+
+        // Attach touch event listeners
+        canvas.addEventListener('touchstart', handleTouchStart);
+        canvas.addEventListener('touchmove', handleTouchMove);
+        canvas.addEventListener('touchend', handleTouchEnd);
 
         startGame();
     </script>
