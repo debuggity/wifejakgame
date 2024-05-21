@@ -782,46 +782,73 @@
                 showLevelMessage = false;
             }
         }
-
+        
         document.addEventListener('keydown', handleKeyDown);
         document.addEventListener('keyup', handleKeyUp);
 
         const touchControls = {
             startX: 0,
             startY: 0,
-            moving: false
+            endX: 0,
+            endY: 0,
         };
+
+        function getSwipeDirection(startX, startY, endX, endY) {
+            const dx = endX - startX;
+            const dy = endY - startY;
+            const absDx = Math.abs(dx);
+            const absDy = Math.abs(dy);
+
+            if (absDx > absDy) {
+                // Horizontal swipe
+                return dx > 0 ? 'right' : 'left';
+            } else if (absDy > absDx) {
+                // Vertical swipe
+                return dy > 0 ? 'down' : 'up';
+            }
+            return null;
+        }
 
         function handleTouchStart(event) {
             event.preventDefault();
-            touchControls.startX = event.touches[0].clientX;
-            touchControls.startY = event.touches[0].clientY;
-            touchControls.moving = false;
+            const touch = event.touches[0];
+            touchControls.startX = touch.clientX;
+            touchControls.startY = touch.clientY;
         }
 
         function handleTouchMove(event) {
-            if (!touchControls.moving) {
-                let deltaX = event.touches[0].clientX - touchControls.startX;
-                let deltaY = event.touches[0].clientY - touchControls.startY;
-                if (Math.abs(deltaX) > Math.abs(deltaY)) {
-                    // Horizontal swipe
-                    player.dx = deltaX > 0 ? player.speed : -player.speed;
-                    player.dy = 0;  // Stop vertical movement
-                    player.facingRight = deltaX > 0;  // Determine facing direction
-                } else if (Math.abs(deltaY) > Math.abs(deltaX)) {
-                    // Vertical swipe
-                    player.dy = deltaY > 0 ? player.speed : -player.speed;
-                    player.dx = 0;  // Stop horizontal movement
-                }
-                touchControls.moving = true;  // Prevent continuous movement
-            }
+            // Optionally handle continuous swipe here if desired
         }
 
         function handleTouchEnd(event) {
             event.preventDefault();
-            player.dx = 0;
-            player.dy = 0;
-            touchControls.moving = false;  // Reset moving flag
+            const touch = event.changedTouches[0];
+            touchControls.endX = touch.clientX;
+            touchControls.endY = touch.clientY;
+
+            const direction = getSwipeDirection(touchControls.startX, touchControls.startY, touchControls.endX, touchControls.endY);
+            switch (direction) {
+                case 'right':
+                    player.dx = player.speed;
+                    player.facingRight = true;
+                    break;
+                case 'left':
+                    player.dx = -player.speed;
+                    player.facingRight = false;
+                    break;
+                case 'up':
+                    player.dy = -player.speed;
+                    break;
+                case 'down':
+                    player.dy = player.speed;
+                    break;
+            }
+
+            // Optionally reset player movement after a short delay
+            setTimeout(() => {
+                player.dx = 0;
+                player.dy = 0;
+            }, 500); // Adjust timing as needed for gameplay feel
         }
 
         // Attach touch event listeners to the canvas specifically
