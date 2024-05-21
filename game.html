@@ -789,42 +789,39 @@
         const touchControls = {
             startX: 0,
             startY: 0,
-            isTouching: false
+            moving: false
         };
 
         function handleTouchStart(event) {
             event.preventDefault();
-            const touch = event.touches[0];
-            const rect = canvas.getBoundingClientRect();
-            touchControls.startX = touch.clientX - rect.left;
-            touchControls.startY = touch.clientY - rect.top;
-            touchControls.isTouching = true;
+            touchControls.startX = event.touches[0].clientX;
+            touchControls.startY = event.touches[0].clientY;
+            touchControls.moving = false;
         }
 
         function handleTouchMove(event) {
-            event.preventDefault();
-            if (!touchControls.isTouching) return;
-
-            const touch = event.touches[0];
-            const rect = canvas.getBoundingClientRect();
-            const deltaX = (touch.clientX - rect.left) - touchControls.startX;
-            const deltaY = (touch.clientY - rect.top) - touchControls.startY;
-
-            if (Math.abs(deltaX) > Math.abs(deltaY)) {
-                // Horizontal movement
-                player.dx = deltaX > 0 ? player.speed : -player.speed;
-                player.facingRight = deltaX > 0;
-            } else {
-                // Vertical movement
-                player.dy = deltaY > 0 ? player.speed : -player.speed;
+            if (!touchControls.moving) {
+                let deltaX = event.touches[0].clientX - touchControls.startX;
+                let deltaY = event.touches[0].clientY - touchControls.startY;
+                if (Math.abs(deltaX) > Math.abs(deltaY)) {
+                    // Horizontal swipe
+                    player.dx = deltaX > 0 ? player.speed : -player.speed;
+                    player.dy = 0;  // Stop vertical movement
+                    player.facingRight = deltaX > 0;  // Determine facing direction
+                } else if (Math.abs(deltaY) > Math.abs(deltaX)) {
+                    // Vertical swipe
+                    player.dy = deltaY > 0 ? player.speed : -player.speed;
+                    player.dx = 0;  // Stop horizontal movement
+                }
+                touchControls.moving = true;  // Prevent continuous movement
             }
         }
 
         function handleTouchEnd(event) {
             event.preventDefault();
-            touchControls.isTouching = false;
             player.dx = 0;
             player.dy = 0;
+            touchControls.moving = false;  // Reset moving flag
         }
 
         // Attach touch event listeners to the canvas specifically
