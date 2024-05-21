@@ -9,7 +9,7 @@
             margin: 0;
             padding: 0;
             overflow: hidden;
-            font-family: Arial, sans-serif;
+            font-family: 'Arial', sans-serif;
             background: linear-gradient(45deg, #ff9a9e, #fad0c4, #fad0c4, #ff9a9e, #fbc2eb, #a18cd1, #fbc2eb, #fcb69f, #ff9a9e, #fad0c4);
             background-size: 200% 200%;
             animation: gradientAnimation 30s ease infinite;
@@ -45,11 +45,13 @@
             align-items: center;
             justify-content: center;
             text-decoration: none;
-            transition: background 0.3s;
+            transition: background 0.3s, transform 0.3s;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
         }
 
         #homeButton:hover {
             background-color: #e5533d;
+            transform: translateY(-3px);
         }
 
         #canvasContainer {
@@ -74,7 +76,10 @@
             background-repeat: repeat;
             display: block;
             z-index: 1;
+            border-radius: 20px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
         }
+
         #hud {
             position: absolute;
             top: 20px; /* Add space from the top */
@@ -83,7 +88,7 @@
             display: flex;
             justify-content: space-around; /* Space the items evenly */
             padding: 10px 20px; /* Adjust padding for a more compact look */
-            background-color: rgba(255, 255, 255, 0.8); /* Slightly more transparent background */
+            background: linear-gradient(90deg, #ff9a9e, #fad0c4);
             border-radius: 15px; /* Rounder corners */
             box-shadow: 0 0 15px rgba(0, 0, 0, 0.2); /* Softer shadow */
             z-index: 10;
@@ -95,14 +100,11 @@
             font-size: 20px; /* Adjust font size */
             font-weight: bold;
             color: #333; /* Darker text color for better contrast */
+            text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.8);
         }
 
         #hud div span {
             color: #ff6347; /* Tomato color for dynamic values */
-        }
-
-        #startScreen {
-            display: block;
         }
 
         .popup {
@@ -111,18 +113,65 @@
             left: 50%;
             transform: translate(-50%, -50%);
             padding: 20px;
-            background-color: white;
+            background: linear-gradient(135deg, #fbc2eb, #a18cd1);
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
             border-radius: 10px;
             text-align: center;
             display: none;
             z-index: 100;
+            max-width: 90%;
+            width: 400px;
+            animation: popupAnimation 0.3s ease-out;
         }
+
+        @keyframes popupAnimation {
+            0% {
+                transform: translate(-50%, -50%) scale(0.8);
+                opacity: 0;
+            }
+            100% {
+                transform: translate(-50%, -50%) scale(1);
+                opacity: 1;
+            }
+        }
+
         .popup button {
             padding: 10px 20px;
             margin-top: 20px;
             font-size: 16px;
+            background-color: #ff6347;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: background 0.3s, transform 0.3s;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
         }
+
+        .popup button:hover {
+            background-color: #e5533d;
+            transform: translateY(-3px);
+        }
+
+        #startScreen {
+            display: block;
+            background: linear-gradient(135deg, #fbc2eb, #a18cd1);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            max-width: 90%;
+            width: 200px;
+            margin: auto;
+            animation: popupAnimation 0.3s ease-out;
+        }
+
+        #startScreen img {
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            border-radius: 50%;
+        }
+
+
+
     </style>
 </head>
 <body>
@@ -231,11 +280,28 @@
         let levelMessageAlpha = 1;
         let levelMessageTimer;
 
-        function startGame() {
+        // Define an array of mp3 files
+        const playlist = ['assets/club_penguin.mp3', 'assets/pizza_shop.mp3'];
+        let currentSongIndex = 0;
+
+        // Function to play the next song in the playlist
+        function playNextSong() {
             const backgroundMusic = document.getElementById('backgroundMusic');
+            backgroundMusic.src = playlist[currentSongIndex];
             backgroundMusic.currentTime = 0;
             backgroundMusic.volume = 0.55;
             backgroundMusic.play();
+
+            // Move to the next song in the playlist, wrap around if at the end
+            currentSongIndex = (currentSongIndex + 1) % playlist.length;
+            
+            // Set up the next song to play when the current one ends
+            backgroundMusic.onended = playNextSong;
+        }
+
+        function startGame() {
+            const backgroundMusic = document.getElementById('backgroundMusic');
+            playNextSong();
 
             hud.score = 0;
             hud.scoreElement.textContent = hud.score;
@@ -422,7 +488,7 @@
 
         function generateShelves(count) {
             const maxAttempts = 100; // Maximum number of attempts to place a shelf
-            const minY = 100; // Minimum y-coordinate for shelf placement
+            const minY = 120; // Minimum y-coordinate for shelf placement
             const maxY = canvas.height - 200; // Maximum y-coordinate for shelf placement
             for (let i = 0; i < count; i++) {
                 let shelf;
@@ -782,7 +848,7 @@
                 showLevelMessage = false;
             }
         }
-        
+
         document.addEventListener('keydown', handleKeyDown);
         document.addEventListener('keyup', handleKeyUp);
 
