@@ -160,6 +160,68 @@
             align-items: center;
         }
 
+        .shop-items {
+            display: flex;
+            overflow-x: auto;
+            padding: 0;
+            margin: 0;
+            gap: 15px;
+            scrollbar-width: thin;
+            scrollbar-color: #ff6347 #f1f1f1; /* For Firefox */
+            cursor: grab;
+        }
+
+        .shop-items.active {
+            cursor: grabbing;
+        }
+
+        .shop-items::-webkit-scrollbar {
+            height: 12px;
+        }
+
+        .shop-items::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+
+        .shop-items::-webkit-scrollbar-thumb {
+            background-color: #ff6347;
+            border-radius: 10px;
+            border: 3px solid #f1f1f1;
+        }
+
+        .shop-items::-webkit-scrollbar-thumb:hover {
+            background-color: #e5533d;
+        }
+
+        .shop-items li {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 15px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+            flex: 0 0 auto;
+            width: 150px;
+            text-align: center;
+        }
+
+        .shop-item-preview {
+            width: 100%;
+            height: auto;
+            border-radius: 10px;
+            filter: blur(5px);
+            margin-bottom: 10px;
+            pointer-events: none; /* Prevent interaction */
+            -webkit-user-select: none; /* Disable selection */
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+            -webkit-touch-callout: none; /* Disable callout on touch devices */
+        }
+
         .buyButton {
             padding: 5px 10px;
             font-size: 1em;
@@ -174,6 +236,29 @@
         .buyButton:hover {
             background: #e5533d;
         }
+        #coinCount {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5em;
+            color: #ff6347;
+            margin-bottom: 20px;
+        }
+
+        .coin-icon {
+            width: 40px; /* Adjust the size as needed */
+            height: auto;
+            margin-right: 10px;
+        }
+
+        .popup, .popup * {
+            user-select: none; /* Standard syntax */
+            -webkit-user-select: none; /* Chrome, Safari */
+            -moz-user-select: none; /* Firefox */
+            -ms-user-select: none; /* IE10+ */
+        }
+
+
 
     </style>
 </head>
@@ -212,21 +297,32 @@
 
     <div class="popup" id="gameStorePopup">
         <h2>Game Store</h2>
-        <div id="coinCount"></div>
-        <ul>
+        <div id="coinCount">
+            <img src="assets/item3.png" alt="Coin" class="coin-icon">
+            <span id="coinAmount"></span>
+        </div>
+        <ul class="shop-items">
             <li>
+                <img src="assets/shop1.png" alt="Item 1" class="shop-item-preview">
                 Item 1 - 35 Coins 
                 <button class="buyButton" data-price="35" data-image="assets/shop1.png">Buy</button>
             </li>
             <li>
+                <img src="assets/shop2.png" alt="Item 2" class="shop-item-preview">
                 Item 2 - 60 Coins 
                 <button class="buyButton" data-price="60" data-image="assets/shop2.png">Buy</button>
             </li>
             <li>
+                <img src="assets/shop3.png" alt="Item 3" class="shop-item-preview">
                 Item 3 - 120 Coins 
                 <button class="buyButton" data-price="120" data-image="assets/shop3.png">Buy</button>
             </li>
-        </ul>
+            <li>
+                <img src="assets/shop4.jpg" alt="Item 4" class="shop-item-preview">
+                Item 4 - 160 Coins 
+                <button class="buyButton" data-price="120" data-image="assets/shop4.jpg">Buy</button>
+            </li>
+        </ul>        
         <button id="closeStorePopupButton">Close</button>
     </div>
     <div class="overlay" id="storeOverlay"></div>
@@ -281,8 +377,11 @@
         // Function to update the coin count in the store popup
         function updateCoinCount() {
             const coins = localStorage.getItem('currency') || 0;
-            coinCountElement.textContent = `Coins: ${coins}`;
+            const coinCountElement = document.getElementById('coinCount');
+            const coinIconHTML = `<img src="assets/item3.png" alt="Coin" class="coin-icon"> ${coins}`;
+            coinCountElement.innerHTML = coinIconHTML;
         }
+
 
         // Show the game store popup
         gameStoreButton.addEventListener('click', function() {
@@ -303,11 +402,12 @@
         });
 
         // Function to trigger a download in a new tab
-        function triggerDownload(imageUrl) {
+        function triggerDownload(imageUrl, itemName) {
+            alert(`Purchase successful! Downloading ${itemName}`);
             window.open(imageUrl, '_blank');
         }
 
-        // Handle buying items
+        // Update the event listener to include the item name
         buyButtons.forEach(button => {
             button.addEventListener('click', function() {
                 const price = parseInt(this.getAttribute('data-price'), 10);
@@ -317,14 +417,15 @@
                     coins -= price;
                     localStorage.setItem('currency', coins);
                     updateCoinCount();
-                    alert('Purchase successful!');
                     const imageUrl = this.getAttribute('data-image');
-                    triggerDownload(imageUrl);
+                    const itemName = this.previousElementSibling.textContent.split(' - ')[0]; // Get the item name
+                    triggerDownload(imageUrl, itemName);
                 } else {
                     alert('Not enough coins!');
                 }
             });
         });
+
 
 
 
@@ -388,6 +489,51 @@
         overlay.addEventListener('click', function() {
             howToPlayPopup.style.display = 'none';
             overlay.style.display = 'none';
+        });
+
+
+        const shopItemsContainer = document.querySelector('.shop-items');
+
+        let isDown = false;
+        let startX;
+        let scrollLeft;
+
+        shopItemsContainer.addEventListener('mousedown', (e) => {
+            isDown = true;
+            shopItemsContainer.classList.add('active');
+            startX = e.pageX - shopItemsContainer.offsetLeft;
+            scrollLeft = shopItemsContainer.scrollLeft;
+        });
+
+        shopItemsContainer.addEventListener('mouseleave', () => {
+            isDown = false;
+            shopItemsContainer.classList.remove('active');
+        });
+
+        shopItemsContainer.addEventListener('mouseup', () => {
+            isDown = false;
+            shopItemsContainer.classList.remove('active');
+        });
+
+        shopItemsContainer.addEventListener('mousemove', (e) => {
+            if (!isDown) return;
+            e.preventDefault();
+            const x = e.pageX - shopItemsContainer.offsetLeft;
+            const walk = (x - startX) * 3; //scroll-fast
+            shopItemsContainer.scrollLeft = scrollLeft - walk;
+        });
+
+        window.addEventListener('DOMContentLoaded', (event) => {
+            const params = new URLSearchParams(window.location.search);
+            if (params.get('openStore') === 'true') {
+                const gameStorePopup = document.getElementById('gameStorePopup');
+                const storeOverlay = document.getElementById('storeOverlay');
+                if (gameStorePopup && storeOverlay) {
+                    updateCoinCount();
+                    gameStorePopup.style.display = 'block';
+                    storeOverlay.style.display = 'block';
+                }
+            }
         });
     </script>
 </body>

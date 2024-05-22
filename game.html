@@ -49,10 +49,31 @@
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
         }
 
-        #homeButton:hover {
+        #homeButton:hover, #storeButton:hover {
             background-color: #e5533d;
             transform: translateY(-3px);
         }
+
+        #storeButton {
+            position: absolute;
+            top: 20px;
+            left: 125px; /* Adjusted position to avoid overlap */
+            padding: 10px 15px;
+            font-size: 16px;
+            background-color: #ff6347;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            transition: background 0.3s, transform 0.3s;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+
 
         #canvasContainer {
             position: relative;
@@ -176,6 +197,8 @@
 </head>
 <body>
     <a href="index.html" id="homeButton">🏠 Home</a>
+    <a href="index.html?openStore=true" id="storeButton">🛒 Store</a>
+
     <audio id="backgroundMusic" src="assets/club_penguin.mp3" loop></audio>
     <audio id="speedBoost" src="assets/speed_up.mp3"></audio>
     <audio id="coinSound" src="assets/get_coins.mp3"></audio>
@@ -253,9 +276,9 @@
             facingRight: true,
             collisionMask: {
                 xOffset: 5, // Offset from player's x-coordinate
-                yOffset: 55, // Offset from player's y-coordinate
+                yOffset: 65, // Offset from player's y-coordinate
                 width: 80,  // Width of the collision mask
-                height: 55  // Height of the collision mask
+                height: 45  // Height of the collision mask
             }
         };
 
@@ -529,7 +552,7 @@
 
         // Load shelf images
         const shelfImages = [];
-        const shelfImageSources = ['assets/shelf.png', 'assets/freezer.png'];
+        const shelfImageSources = ['assets/shelf.png', 'assets/freezer2.png', 'assets/fruits_and_veggies.png', 'assets/freezer3.png'];
 
         shelfImageSources.forEach(src => {
             const img = new Image();
@@ -922,6 +945,20 @@
         canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
         canvas.addEventListener('touchend', handleTouchEnd, { passive: false });
 
+        // Add this after the existing event listeners
+        const storeButton = document.getElementById('storeButton');
+        const gameStorePopup = document.getElementById('gameStorePopup');
+        const storeOverlay = document.getElementById('storeOverlay');
+
+        storeButton.addEventListener('click', function() {
+            updateCoinCount();
+            gameStorePopup.style.display = 'block';
+            storeOverlay.style.display = 'block';
+        });
+
+
+
+        
         startGame();
     </script>
 </body>
