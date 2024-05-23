@@ -191,6 +191,61 @@
             border-radius: 50%;
         }
 
+        #musicPlayer {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: linear-gradient(135deg, #fbc2eb, #a18cd1);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+            display: none;
+            animation: popupAnimation 0.3s ease-out;
+            text-align: center;
+            max-width: 90%;
+            width: 420px;
+            height: 500px;
+        }
+
+        #musicPlayer h3 {
+            margin: 0 0 10px 0;
+        }
+
+        #musicPlayer #songInfo {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        #songImage {
+            width: 250px; 
+            height: 250px; 
+            border-radius: 10px;
+            display: block;
+            margin: 10px auto; 
+        }
+
+        #songName {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+            text-align: center;
+            margin: 10px 0;
+        }
+
+        #musicPlayer div.controls {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        #musicPlayer input[type="range"] {
+            width: 100%;
+            margin-top: 10px;
+        }
+
 
 
     </style>
@@ -220,6 +275,22 @@
     <div id="canvasContainer">
         <canvas id="gameCanvas" width="1200" height="800"></canvas>
     </div>
+
+    <div id="musicPlayer" class="popup">
+        <h3>Music Player</h3>
+        <div id="songInfo">
+            <img id="songImage" src="" alt="Song Image" style="display: none;">
+            <div id="songName">Song Name</div>
+        </div>
+        <div class="controls">
+            <button id="prevSong">⏮️</button>
+            <button id="playPause">⏯️</button>
+            <button id="nextSong">⏭️</button>
+        </div>
+        <input type="range" id="volumeControl" min="0" max="1" step="0.01">
+        <button id="closePlayer">❌</button>
+    </div>
+    
 
     <script>
         const canvas = document.getElementById('gameCanvas');
@@ -304,21 +375,40 @@
         let levelMessageTimer;
 
         // Define an array of mp3 files
-        const playlist = ['assets/club_penguin.mp3', 'assets/pizza_shop.mp3'];
+        const playlist = ['assets/Soundtrack/Groovin in the Aisles.mp3', 'assets/Soundtrack/Grocery Serenade.mp3', 'assets/Soundtrack/Bears all around Me.mp3', 'assets/Soundtrack/club_penguin.mp3', 'assets/Soundtrack/pizza_shop.mp3'];
         let currentSongIndex = 0;
 
+        // Function to play the next song in the playlist
+        // Update the playNextSong function to ensure the next song plays automatically
         // Function to play the next song in the playlist
         function playNextSong() {
             const backgroundMusic = document.getElementById('backgroundMusic');
             backgroundMusic.src = playlist[currentSongIndex];
             backgroundMusic.currentTime = 0;
-            backgroundMusic.volume = 0.55;
+            backgroundMusic.volume = volumeControl.value; // Set volume to the current slider value
             backgroundMusic.play();
 
-            // Move to the next song in the playlist, wrap around if at the end
+            // Update song name display
+            const songNameElement = document.getElementById('songName');
+            const songImageElement = document.getElementById('songImage');
+            const songName = playlist[currentSongIndex].split('/').pop().split('.').shift().replace(/_/g, ' '); // Replace underscores with spaces
+            songNameElement.textContent = songName;
+
+            // Check if the image exists and update the display
+            const songImagePath = `assets/soundtrack/${songName}.png`;
+            const img = new Image();
+            img.onload = () => {
+                songImageElement.src = songImagePath;
+                songImageElement.style.display = 'block';
+            };
+            img.onerror = () => {
+                songImageElement.style.display = 'none';
+            };
+            img.src = songImagePath; // Trigger the image loading
+
             currentSongIndex = (currentSongIndex + 1) % playlist.length;
-            
-            // Set up the next song to play when the current one ends
+
+            // Ensure that the next song plays when the current song ends
             backgroundMusic.onended = playNextSong;
         }
 
@@ -337,7 +427,8 @@
             obstacles.length = 0;
             collectedAllItems = false;
             loadCurrency(); // Load currency from cookies
-            generateShelves(initialShelves);
+            generateShelves(level);
+            //generateShelves(initialShelves);
             generateItems(initialItems);
             generateObstacles(initialObstacles);
 
@@ -509,7 +600,35 @@
             });
         }
 
-        function generateShelves(count) {
+
+        // Shuffle function
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        // Generate shelves function
+        function generateShelves(level) {
+            shelves.length = 0;
+            let layout;
+            
+            if (level <= shelfLayouts.length) {
+                layout = shelfLayouts[level - 1]; // Use predefined layout for levels 1-10
+            } else {
+                // For levels higher than the predefined ones, shuffle the existing layouts
+                const shuffledLayouts = [...shelfLayouts];
+                shuffleArray(shuffledLayouts);
+                layout = shuffledLayouts[level % shelfLayouts.length]; // Use a shuffled layout
+            }
+            
+            layout.forEach(shelf => {
+                shelves.push({ ...shelf }); // Create a new shelf based on the layout
+            });
+        }
+
+        /*function generateShelves(count) {
             const maxAttempts = 100; // Maximum number of attempts to place a shelf
             const minY = 120; // Minimum y-coordinate for shelf placement
             const maxY = canvas.height - 200; // Maximum y-coordinate for shelf placement
@@ -530,7 +649,7 @@
                     shelves.push(shelf);
                 }
             }
-        }
+        }*/
 
         function drawShelves() {
             shelves.forEach(shelf => {
@@ -559,6 +678,100 @@
             img.src = src;
             shelfImages.push(img);
         });
+
+        const shelfLayouts = [
+            // Layout for Level 1: Simple Introduction
+            [
+                { x: 150, y: 150, width: 200, height: 100, image: shelfImages[0] },
+                { x: 450, y: 150, width: 200, height: 100, image: shelfImages[1] },
+                { x: 750, y: 150, width: 200, height: 100, image: shelfImages[2] },
+                { x: 300, y: 350, width: 200, height: 100, image: shelfImages[3] },
+                { x: 600, y: 350, width: 200, height: 100, image: shelfImages[0] }
+            ],
+            // Layout for Level 2: Zig-Zag Path
+            [
+                { x: 150, y: 120, width: 200, height: 100, image: shelfImages[1] },
+                { x: 400, y: 220, width: 200, height: 100, image: shelfImages[2] },
+                { x: 650, y: 320, width: 200, height: 100, image: shelfImages[0] },
+                { x: 900, y: 420, width: 200, height: 100, image: shelfImages[1] },
+                { x: 150, y: 520, width: 200, height: 100, image: shelfImages[2] }
+            ],
+            // Layout for Level 3: Central Block
+            [
+                { x: 450, y: 200, width: 200, height: 100, image: shelfImages[2] },
+                { x: 450, y: 400, width: 200, height: 100, image: shelfImages[3] },
+                { x: 200, y: 300, width: 200, height: 100, image: shelfImages[1] },
+                { x: 800, y: 300, width: 200, height: 100, image: shelfImages[0] }
+            ],
+            // Layout for Level 4: Perimeter Path
+            [
+                { x: 50, y: 50, width: 200, height: 100, image: shelfImages[0] },
+                { x: 950, y: 50, width: 200, height: 100, image: shelfImages[1] },
+                { x: 50, y: 650, width: 200, height: 100, image: shelfImages[2] },
+                { x: 950, y: 500, width: 200, height: 100, image: shelfImages[3] },
+                { x: 500, y: 350, width: 200, height: 100, image: shelfImages[0] }
+            ],
+            // Layout for Level 5: Crossroads
+            [
+                { x: 100, y: 300, width: 200, height: 100, image: shelfImages[1] },
+                { x: 500, y: 100, width: 200, height: 100, image: shelfImages[2] },
+                { x: 900, y: 300, width: 200, height: 100, image: shelfImages[3] },
+                { x: 500, y: 500, width: 200, height: 100, image: shelfImages[0] }
+            ],
+            // Layout for Level 6: Checkerboard
+            [
+                { x: 200, y: 150, width: 200, height: 100, image: shelfImages[0] },
+                { x: 600, y: 150, width: 200, height: 100, image: shelfImages[1] },
+                { x: 1000, y: 150, width: 200, height: 100, image: shelfImages[2] },
+                { x: 400, y: 400, width: 200, height: 100, image: shelfImages[3] },
+                { x: 800, y: 400, width: 200, height: 100, image: shelfImages[0] }
+            ],
+            // Layout for Level 7: Spiral Path
+            [
+                { x: 100, y: 100, width: 200, height: 100, image: shelfImages[1] },
+                { x: 400, y: 100, width: 200, height: 100, image: shelfImages[2] },
+                { x: 700, y: 100, width: 200, height: 100, image: shelfImages[3] },
+                { x: 100, y: 400, width: 200, height: 100, image: shelfImages[0] },
+                { x: 700, y: 400, width: 200, height: 100, image: shelfImages[1] },
+                { x: 100, y: 700, width: 200, height: 100, image: shelfImages[2] },
+                { x: 400, y: 700, width: 200, height: 100, image: shelfImages[3] },
+                { x: 700, y: 700, width: 200, height: 100, image: shelfImages[0] }
+            ],
+            // Layout for Level 8: Maze
+            [
+                { x: 50, y: 50, width: 200, height: 100, image: shelfImages[0] },
+                { x: 250, y: 50, width: 200, height: 100, image: shelfImages[1] },
+                { x: 450, y: 50, width: 200, height: 100, image: shelfImages[2] },
+                { x: 650, y: 50, width: 200, height: 100, image: shelfImages[3] },
+                { x: 850, y: 50, width: 200, height: 100, image: shelfImages[0] },
+                { x: 50, y: 300, width: 200, height: 100, image: shelfImages[1] },
+                { x: 850, y: 300, width: 200, height: 100, image: shelfImages[2] },
+                { x: 50, y: 550, width: 200, height: 100, image: shelfImages[3] },
+                { x: 850, y: 550, width: 200, height: 100, image: shelfImages[0] }
+            ],
+            // Layout for Level 9: Central Block with Extra Shelves
+            [
+                { x: 500, y: 100, width: 200, height: 100, image: shelfImages[1] },
+                { x: 500, y: 300, width: 200, height: 100, image: shelfImages[2] },
+                { x: 500, y: 500, width: 200, height: 100, image: shelfImages[3] },
+                { x: 250, y: 300, width: 200, height: 100, image: shelfImages[0] },
+                { x: 750, y: 300, width: 200, height: 100, image: shelfImages[1] }
+            ],
+            // Layout for Level 10: Complex Path
+            [
+                { x: 100, y: 100, width: 200, height: 100, image: shelfImages[2] },
+                { x: 400, y: 100, width: 200, height: 100, image: shelfImages[3] },
+                { x: 700, y: 100, width: 200, height: 100, image: shelfImages[0] },
+                { x: 1000, y: 100, width: 200, height: 100, image: shelfImages[1] },
+                { x: 100, y: 300, width: 200, height: 100, image: shelfImages[2] },
+                { x: 700, y: 300, width: 200, height: 100, image: shelfImages[3] },
+                { x: 1000, y: 300, width: 200, height: 100, image: shelfImages[0] },
+                { x: 100, y: 500, width: 200, height: 100, image: shelfImages[1] },
+                { x: 400, y: 500, width: 200, height: 100, image: shelfImages[2] },
+                { x: 1000, y: 500, width: 200, height: 100, image: shelfImages[3] }
+            ]
+        ];
+
 
         function generateObstacles(count) {
             const maxAttempts = 500; // Maximum number of attempts to place an obstacle
@@ -823,7 +1036,9 @@
             shelves.length = 0;
             obstacles.length = 0;
             
-            generateShelves(Math.min(initialShelves + Math.floor(level / 2), 10));
+            //generateShelves(Math.min(initialShelves + Math.floor(level / 2), 10));
+            generateShelves(level);
+
             generateItems(Math.min(initialItems + level, 15));
             generateObstacles(Math.min(initialObstacles + Math.floor(level / 2), 10));
 
@@ -961,5 +1176,64 @@
         
         startGame();
     </script>
+
+    <script>
+        const musicPlayer = document.getElementById('musicPlayer');
+        const playPauseButton = document.getElementById('playPause');
+        const nextSongButton = document.getElementById('nextSong');
+        const prevSongButton = document.getElementById('prevSong');
+        const volumeControl = document.getElementById('volumeControl');
+        const closePlayerButton = document.getElementById('closePlayer');
+
+        let isPlaying = false;
+
+        function toggleMusicPlayer() {
+            musicPlayer.style.display = musicPlayer.style.display === 'block' ? 'none' : 'block';
+        }
+
+        playPauseButton.addEventListener('click', () => {
+            const backgroundMusic = document.getElementById('backgroundMusic');
+            if (isPlaying) {
+                backgroundMusic.pause();
+                playPauseButton.textContent = '⏯️';
+            } else {
+                backgroundMusic.play();
+                playPauseButton.textContent = '⏸️';
+            }
+            isPlaying = !isPlaying;
+        });
+
+        nextSongButton.addEventListener('click', playNextSong);
+        prevSongButton.addEventListener('click', () => {
+            currentSongIndex = (currentSongIndex - 2 + playlist.length) % playlist.length; // Go back one song
+            playNextSong();
+        });
+
+        volumeControl.addEventListener('input', (event) => {
+            const backgroundMusic = document.getElementById('backgroundMusic');
+            backgroundMusic.volume = event.target.value;
+        });
+
+        closePlayerButton.addEventListener('click', toggleMusicPlayer);
+
+        // Show the music player button
+        const musicPlayerButton = document.createElement('button');
+        musicPlayerButton.textContent = '🎵';
+        musicPlayerButton.style.position = 'fixed';
+        musicPlayerButton.style.bottom = '20px';
+        musicPlayerButton.style.right = '20px';
+        musicPlayerButton.style.zIndex = '1000';
+        musicPlayerButton.style.backgroundColor = '#ff6347';
+        musicPlayerButton.style.color = 'white';
+        musicPlayerButton.style.border = 'none';
+        musicPlayerButton.style.borderRadius = '50%';
+        musicPlayerButton.style.padding = '10px';
+        musicPlayerButton.style.cursor = 'pointer';
+        musicPlayerButton.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.3)';
+        musicPlayerButton.addEventListener('click', toggleMusicPlayer);
+
+        document.body.appendChild(musicPlayerButton);
+    </script>
+
 </body>
 </html>
